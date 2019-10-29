@@ -17,7 +17,7 @@
     + `plot_rl`
 
 
-# ver 0.0.1 (current version)
+## ver 0.0.1 (current version)
 
 * Created a repository
 * Uploaded to PyPI
