@@ -7,6 +7,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy.stats as stats
 import statsmodels.api as sm
 
 
@@ -613,6 +614,33 @@ def logarithmic_scoring(mod, data, get_sum = True):
     result = ys * np.log(phats) + (1 - ys) * np.log(1 - phats)
     
     return sum(result) if get_sum else result
+def plot_lm(mod, mfrow = (2, 2), hspace = .5, wspace = .3):
+    '''(sm.RegressionResultsWrapper[, (int, int), float, float]) -> None
+
+    Preconditions: 
+    1. mfrow[0] * mfrow[1] == 4
+    2. len(mfrow) == 2
+
+    Plot the following plots of mod in the shape of mfrow, in this order:
+    
+    * Residuals vs. Fitted plot 
+    * Normal Q-Q plot
+    * Scale-Location plot
+    * Residuals vs. Leverage plot
+
+    Specify hspace and wspace (arguments of fig.subplots_adjust() where
+    fig = plt.figure()) to adjust margins between subplots.
+    '''
+
+    fig = plt.figure()
+    plot_funcs = [plot_rf, plot_qq, plot_sl, plot_rlev]
+    i = 0
+    for func in plot_funcs:
+        i += 1
+        plt.subplot(mfrow[0], mfrow[1], i)
+        func(mod)
+    fig.subplots_adjust(hspace = hspace, wspace = wspace)
+    plt.show()
 def plot_op(mod, response, num_breaks = None, breaks = None, 
             xlab = 'Predicted Probability', 
             ylab = 'Observed Proportion'):
@@ -663,6 +691,128 @@ def plot_op(mod, response, num_breaks = None, breaks = None,
     plt.xlabel(xlab)
     plt.ylabel(ylab)
     plt.plot(x, x, color = '#FF7F0E', alpha = .4)
+    plt.show()
+def plot_qq(mod):
+    '''(sm.RegressionResultsWrapper) -> None
+
+    Plot a QQ-plot of mod. Numbers in the plot indicate outliers. For 
+    example, if `17` is plotted besides a point, then it means that the 
+    observation at index 17, or the 18th observation, of the training data
+    is considered a possible outlier.
+    '''
+
+    influence = mod.get_influence()
+    rstandard = influence.resid_studentized_internal[:]
+    arrays = stats.probplot(rstandard, dist = 'norm')
+    theoretical_q, sorted_rstandard = arrays[0]
+    slope, intercept, r = arrays[1]
+    rstandard2 = list(enumerate(rstandard))
+    rstandard2.sort(key = lambda x: x[1])
+    rstandard2 = np.array(rstandard2)
+    outliers = map(lambda x: True if abs(x[1]) > 2 else False, rstandard2)
+    outliers = np.array(list(outliers))
+    dat = np.c_[rstandard2, theoretical_q, outliers]
+    x = np.linspace(min(theoretical_q), max(theoretical_q))
+
+    plt.scatter(dat[:, 2], dat[:, 1])
+    plt.plot(
+        x, slope * x + intercept, linestyle = 'dashed', color = 'grey'
+    )
+    plt.title('Normal Q-Q')
+    plt.xlabel('Theoretical quantiles')
+    plt.ylabel('Standardized residuals')
+    dat2 = list(filter(lambda row: row[-1] == 1, dat))
+    for item in dat2:
+        plt.text(item[2], item[1], str(int(item[0])))
+    plt.show()
+def plot_rf(mod):
+    '''(sm.RegressionResultsWrapper) -> None
+
+    Plot a Residual vs. Fitted plot of mod.  Numbers in the plot indicate 
+    outliers. For example, if `17` is plotted besides a point, then it 
+    means that the observation at index 17, or the 18th observation, of 
+    the training data is considered a possible outlier.
+    '''
+
+    residuals = mod.resid
+    fitted = mod.predict()
+    lowess_line = sm.nonparametric.lowess(residuals, fitted)
+
+    influence = mod.get_influence()
+    rstandard = influence.resid_studentized_internal[:]
+    rstandard = np.array(list(enumerate(rstandard)))
+    outliers = map(lambda x: True if abs(x[1]) > 2 else False, rstandard)
+    outliers = np.array(list(outliers))
+    dat = np.c_[rstandard, fitted, residuals, outliers]
+    outlier_ids = dat[dat[:, -1] == 1]
+    x = np.linspace(min(fitted), max(fitted))
+
+    plt.scatter(fitted, residuals)
+    plt.plot(lowess_line[:, 0], lowess_line[:, 1], color = 'red')
+    plt.plot(x, np.zeros(len(x)), linestyle = 'dashed', color = 'grey')
+    plt.title('Residuals vs. Fitted')
+    plt.xlabel('Fitted values')
+    plt.ylabel('Residuals')
+    for item in outlier_ids:
+        plt.text(item[2], item[3], str(int(item[0])))
+    plt.show()
+def plot_rlev(mod):
+    '''(sm.RegressionResultsWrapper) -> None
+
+    Plot a Residuals vs. Leverage plot of mod. Numbers in the plot indicate
+    outliers. For example, if `17` is plotted besides a point, then it 
+    means that the observation at index 17, or the 18th observation, of the
+    training data is considered a possible outlier.
+    '''
+
+    influence = mod.get_influence()
+    leverage = influence.hat_matrix_diag
+    # cooks_d = influence.cooks_distance
+    rstandard = influence.resid_studentized_internal[:]
+    rstandard = np.array(list(enumerate(rstandard)))
+    outliers = map(lambda x: True if abs(x[1]) > 2 else False, rstandard)
+    outliers = np.array(list(outliers))
+    dat = np.c_[rstandard, leverage, outliers]#, cooks_d[0]]
+    outlier_ids = dat[dat[:, -1] == 1]
+    x = np.linspace(0, max(leverage))
+    y = np.linspace(min(rstandard[:, 1]), max(rstandard[:, 1]))
+
+    plt.scatter(dat[:, 2], dat[:, 1])
+    plt.plot(x, np.zeros(len(x)), linestyle = 'dashed', color = 'grey')
+    plt.plot(np.zeros(len(y)), y, linestyle = 'dashed', color = 'grey')
+    plt.title('Residuals vs. Leverage')
+    plt.xlabel('Leverage')
+    plt.ylabel('Standardized residuals')
+    for item in outlier_ids:
+        plt.text(item[2], item[1], str(int(item[0])))
+    plt.show()
+def plot_sl(mod):
+    '''(sm.RegressionResultsWrapper) -> None
+
+    Plot a Scale-Location plot of mod.  Numbers in the plot indicate 
+    outliers. For example, if `17` is plotted besides a point, then it 
+    means that the observation at index 17, or the 18th observation, of the
+    training data is considered a possible outlier.
+    '''
+
+    fitted = mod.predict()
+    influence = mod.get_influence()
+    rstandard = influence.resid_studentized_internal[:]
+    rstandard = np.array(list(enumerate(rstandard)))
+    outliers = map(lambda x: True if abs(x[1]) > 2 else False, rstandard)
+    outliers = np.array(list(outliers))
+    rstandard[:, 1] = abs(rstandard[:, 1]) ** .5
+    dat = np.c_[rstandard, fitted, outliers] # id, resid, fitted, outliers
+    lowess_line = sm.nonparametric.lowess(dat[:, 1], dat[:, 2])
+    outlier_ids = dat[dat[:, -1] == 1]
+
+    plt.scatter(dat[:, 2], dat[:, 1])
+    plt.plot(lowess_line[:, 0], lowess_line[:, 1], color = 'red')
+    plt.title('Scale-Location')
+    plt.xlabel('Fitted values')
+    plt.ylabel(r'$\sqrt{|Standardized\/\/residuals|}$')
+    for item in outlier_ids:
+        plt.text(item[2], item[1], str(int(item[0])))
     plt.show()
 def produce_roc_table(mod, train):
     '''(sm.GLMResultsWrapper, pd.DataFrame) -> pd.DataFrame
