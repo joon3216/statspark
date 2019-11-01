@@ -16,8 +16,16 @@
     + `model_by_lrt`
     + `plot_rl`
 
+## ver 0.0.1 (GitHub)
 
-## ver 0.0.1 (current version)
+* Added the following plotting functions:
+    + `plot_lm`
+    + `plot_qq`
+    + `plot_rf`
+    + `plot_rlev`
+    + `plot_sl`
+
+## ver 0.0.1 (PyPI)
 
 * Created a repository
 * Uploaded to PyPI
