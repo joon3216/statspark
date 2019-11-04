@@ -1,7 +1,7 @@
 
 # `statspark`
 
-## Coming up: ver 0.0.2
+## Coming up: ver 0.0.3
 
 * Add tests for functions
 * Define `Model` object to incorporate the training set and the formula. This will get rid of `train` argument in the following functions:
@@ -16,7 +16,7 @@
     + `model_by_lrt`
     + `plot_rl`
 
-## ver 0.0.1 (GitHub)
+## ver 0.0.2
 
 * Added the following functions:
     + `count_null`: return an SQL query that counts the number of NULLs in selected columns in a table
@@ -33,7 +33,7 @@
     + `simulate_nan(X, nan_rate)` (not made available): randomly replace some values of X with `np.nan`
 
 
-## ver 0.0.1 (PyPI)
+## ver 0.0.1
 
 * Created a repository
 * Uploaded to PyPI
