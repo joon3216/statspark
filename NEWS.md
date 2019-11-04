@@ -20,8 +20,11 @@
 
 * Added the following functions:
     + `fusion_estimates`: see [here](https://joon3216.github.io/research_materials/2018/non_separable_penalty) for details
+* Edited the return value of `count_null`:
+    + semicolon at the end is removed.
 * Edited the return value of `gauss_seidel`:
     + `y` deleted, `lambd` added, `niters` changed its name to `iteration`
+
 
 ## ver 0.0.2 (PyPI)
 
