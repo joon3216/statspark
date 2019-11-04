@@ -1,6 +1,7 @@
 
+from functools import reduce
 from patsy import dmatrices
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, fmin
 from scipy.stats import chi2
 from sklearn.metrics import roc_curve
 from statsmodels.stats.outliers_influence import variance_inflation_factor
@@ -201,6 +202,7 @@ class Pipe():
         '''
     
         return Pipe(func(self.obj, *args, **kwargs))
+npmap = lambda func, *iterable: np.array(list(map(func, *iterable)))
 def add_intercept(data, int_name = 'Intercept', loc = 0, inplace = False):
     '''(pd.DataFrame[, str, int, bool]) -> pd.DataFrame
     
@@ -237,6 +239,65 @@ def additive_terms(terms):
     '''
 
     return ''.join(map(lambda x: x + ' + ', terms))[:-3]
+def csum_N_pois(pmf, support, lambd, eps = 1e-05):
+    '''(function, np.array, number[, float]) -> np.array
+        
+    Preconditions:
+    1. pmf is a pmf of X_i where the random summation S = X_1 + ... + X_N 
+       with N ~ Pois(lambd) has 0, 1, ..., M - 1 as the first M element of 
+       its support.
+    2. pmf is a function whose output is np.array whenever the input is
+       np.array.
+    3. support == np.arange(0, l + 1), where l is the largest number of
+       the support of pmf.
+    4. lambd > 0
+    5. 0 < eps < 1
+        
+    Return the approximate probability mass function of S, i.e. 
+    P(S = x | S < M) for some appropriate integer M determined by 
+    P(S >= M) < eps, where S is the sum of iid X_i's with 
+    i = 1, ..., N ~ Pois(lambd), X_i ~ pmf, and X_i's support is
+    a subset of np.arange(0, l + 1) (= support) with l being the largest 
+    element of X_i's support.
+        
+    >>> def dY(y):
+    ...     def pY(d):
+    ...         if d in [1, 4]:
+    ...             return .25
+    ...         elif d == 2:
+    ...             return .5
+    ...         else:
+    ...             return 0
+    ...     if not hasattr(y, '__iter__'):
+    ...         return pY(y)
+    ...     return npmap(pY, y)
+    ...
+    >>> result_Y = csum_N_pois(dY, np.arange(0, 5), 3)
+    >>> M_Y = len(result_Y)
+    >>> print(M_Y, sum(result_Y))
+    39 0.9999999999999998
+    >>> result_Y[0:4]
+    array([0.04978729, 0.03734044, 0.08868328, 0.05951115])
+    '''
+        
+    pmf_vec = pmf(support)
+        
+    # Define the pgf of X_i
+    g = lambda t: npmap(lambda d: sum(d ** support * pmf_vec), t)
+        
+    # Find M
+    Ms = lambda t: (-lambd * (1 - g(t)) - np.log(eps)) / np.log(t)
+    M = np.ceil(fmin(Ms, 1.001, full_output = True, disp = False)[1])
+    
+    # Append 0's
+    pmf_vec = np.append(pmf_vec, np.zeros(int(M - len(pmf_vec))))
+        
+    # Apply DFT and inverse DFT
+    gtks = np.fft.fft(pmf_vec)
+    gS_gtks = np.exp(-lambd * (1 - gtks))
+    pS_tks = np.fft.ifft(gS_gtks).real
+        
+    return pS_tks
 def dcast(data, formula, value_var = None):
     '''(pd.DataFrame, str[, str]) -> pd.DataFrame
     
@@ -312,6 +373,58 @@ def dist_to_point(X, point):
     
     X = X.values if 'pandas' in str(type(X)) else X
     return np.array(list(map(lambda row: np.linalg.norm(row - point), X)))
+def dpmf(x, pmf_vec, support_vec = None):
+    '''(object or *iterable, *iterable[, *iterable]) -> number or np.array
+    
+    Preconditions:
+    1. Elements of x are of the same type as elements of support_vec,
+       if support_vec is specified. If support_vec is not specified, then
+       x must be a number or an iterable object with numeric elements.
+    2. sum(pmf_vec) == 1
+    3. len(pmf_vec) == len(support_vec) if support_vec is specified.
+    4. If support_vec is specified, then each element of support_vec 
+       must be hashable, i.e. element.__hash__ is not None
+    
+    Return the probability evaluated at each element of x based on
+    probabilities in pmf_vec and elements of support_vec if support_vec 
+    is specified (each element of support_vec is the input that corresponds
+    to the probability in pmf_vec). If not specified, then support_vec will 
+    be replaced with np.arange(0, len(pmf_vec)).
+    
+    >>> # Example 1
+    >>> pmf_eg1 = [0.25, 0.5 , 0.25]
+    >>> support_eg1 = np.array([1, 2, 4])
+    >>> dpmf(1, pmf_eg1, support_eg1)
+    0.25
+    >>> dpmf([3, 4, 6], pmf_eg1, support_eg1)
+    array([0.  , 0.25, 0.  ])
+    >>> dpmf(np.array([3, 4, 6]), pmf_eg1, support_eg1)
+    array([0.  , 0.25, 0.  ])
+    >>>
+    >>> # Example 2
+    >>> pmf_eg2 = (.25, .4, .35)
+    >>> support_eg2 = ['apple', 'orange', 'neither']
+    >>> dfruit = lambda x: dpmf(x, pmf_eg2, support_eg2)
+    >>> dfruit(['apple', 'neither'])
+    array([0.25, 0.35])
+    >>> dfruit('orange')
+    0.4
+    >>> dfruit(np.array(['orange', 'hello']))
+    array([0.4, 0. ])
+    '''
+    
+    M = len(pmf_vec)
+    if support_vec is None:
+        support_vec = np.arange(0, M)
+    D = {}
+    for i in range(len(support_vec)):
+        D[support_vec[i]] = pmf_vec[i]
+    finder = lambda d: D[d] if d in D.keys() else 0
+    if hasattr(x, '__iter__'):
+        if type(x) == str:
+            return finder(x)
+        return npmap(finder, x)
+    return finder(x)
 def fft_curve(tt, yy, only_sin = False):
     '''(array-like, array-like, bool) -> {str: number, lambda, or tuple}
     
@@ -563,6 +676,74 @@ def hsm(x, tau = .5):
     r = x.mean() if len(x) <= 2 else hsm(x, tau = tau)
     
     return r
+def impute_em(X, max_iter = 3000, eps = 1e-08):
+    '''(np.array, int, number) -> {str: np.array or int}
+    
+    Precondition: max_iter >= 1 and eps > 0
+    
+    Return the dictionary with five keys where:
+    - Key 'mu' stores the mean estimate of the imputed data.
+    - Key 'Sigma' stores the variance estimate of the imputed data.
+    - Key 'X_imputed' stores the imputed data that is mutated from X using 
+      the EM algorithm.
+    - Key 'C' stores the np.array that specifies the original missing 
+      entries of X.
+    - Key 'iteration' stores the number of iteration used to compute
+      'X_imputed' based on max_iter and eps specified.
+    '''
+    
+    nr, nc = X.shape
+    C = np.isnan(X) == False
+    
+    # Collect M_i and O_i's
+    one_to_nc = np.arange(1, nc + 1, step = 1)
+    M = one_to_nc * (C == False) - 1
+    O = one_to_nc * C - 1
+    
+    # Generate Mu_0 and Sigma_0
+    Mu = np.nanmean(X, axis = 0)
+    observed_rows = np.where(np.isnan(sum(X.T)) == False)[0]
+    S = np.cov(X[observed_rows, ].T)
+    if np.isnan(S).any():
+        S = np.diag(np.nanvar(X, axis = 0))
+    
+    # Start updating
+    Mu_tilde, S_tilde = {}, {}
+    X_tilde = X.copy()
+    no_conv = True
+    iteration = 0
+    while no_conv and iteration < max_iter:
+        for i in range(nr):
+            S_tilde[i] = np.zeros(nc ** 2).reshape(nc, nc)
+            if set(O[i, ]) != set(one_to_nc - 1): # missing vals exist
+                M_i, O_i = M[i, ][M[i, ] != -1], O[i, ][O[i, ] != -1]
+                S_MM = S[np.ix_(M_i, M_i)]
+                S_MO = S[np.ix_(M_i, O_i)]
+                S_OM = S_MO.T
+                S_OO = S[np.ix_(O_i, O_i)]
+                Mu_tilde[i] = Mu[np.ix_(M_i)] +\
+                    S_MO @ np.linalg.inv(S_OO) @\
+                    (X_tilde[i, O_i] - Mu[np.ix_(O_i)])
+                X_tilde[i, M_i] = Mu_tilde[i]
+                S_MM_O = S_MM - S_MO @ np.linalg.inv(S_OO) @ S_OM
+                S_tilde[i][np.ix_(M_i, M_i)] = S_MM_O
+        Mu_new = np.mean(X_tilde, axis = 0)
+        S_new = np.cov(X_tilde.T, bias = 1) +\
+            reduce(np.add, S_tilde.values()) / nr
+        no_conv =\
+            np.linalg.norm(Mu - Mu_new) >= eps or\
+            np.linalg.norm(S - S_new, ord = 2) >= eps
+        Mu = Mu_new
+        S = S_new
+        iteration += 1
+    
+    return {
+        'mu': Mu,
+        'Sigma': S,
+        'X_imputed': X_tilde,
+        'C': C,
+        'iteration': iteration
+    }
 def kde(x, samples, **kwargs):
     '''(float or *iterable, *iterable[, arguments of KDEUnivariate]) 
         -> np.array
@@ -842,7 +1023,47 @@ def produce_roc_table(mod, train):
     roc_tbl['dist_to_optimal_point'] = dtp    
     
     return roc_tbl
-
+def rpmf(n, pmf, support, **kwargs):
+    '''(int, function, *iterable[, **kwargs]) -> np.array
+    
+    Precondition: 
+    1. n >= 1
+    2. support is the support of pmf.
+    
+    Return n random samples from the specified pmf with support 'support'
+    and additional arguments of pmf in **kwargs if required. Since this
+    function uses **kwargs, any additional arguments of pmf you want to
+    specify must be named.
+    
+    >>> # Example 1: dX
+    >>> np.random.seed(1024)
+    >>> rpmf(n = 20, pmf = dX, support = np.arange(0, 6))
+    array([5, 5, 5, 5, 5, 5, 1, 0, 1, 5, 5, 5, 5, 3, 5, 5, 5, 2, 5, 1])
+    >>>
+    >>> # Example 2: S_Y = Y_1 + ... + Y_N
+    >>> np.random.seed(1024)
+    >>> # recall dY in csum_N_pois example
+    >>> result_S_Y = csum_N_pois(dY, np.arange(0, 5), 3)
+    >>> result_S_Y = result_S_Y / sum(result_S_Y)
+    >>> M_S_Y = len(result_S_Y)
+    >>> rpmf(10, dpmf, np.arange(0, M_S_Y), pmf_vec = result_S_Y)
+    array([ 8, 22,  6,  8,  7,  9,  2,  0,  2,  9])
+    >>>
+    >>> # Example 3: dfruit in dpmf example
+    >>> np.random.seed(2048)
+    >>> rpmf(7, dfruit, ['apple', 'orange', 'neither'])
+    array(['orange', 'apple', 'neither', 'neither', 'neither', 'orange',
+           'apple'], dtype='<U7')
+    '''
+    
+    cmf_vec = np.append(0, np.cumsum(pmf(support, **kwargs)))
+    unif_01 = np.random.random(n)
+    result = []
+    for k in range(n):
+        for j in range(len(cmf_vec) - 1):
+            if unif_01[k] >= cmf_vec[j] and unif_01[k] < cmf_vec[j + 1]:
+                result.append(support[j])
+    return np.array(result)
 
 # In development
 def anova(*args):
@@ -1357,6 +1578,52 @@ def plot_rl(mod, num_breaks = None, breaks = None,
     plt.xlabel(xlab)
     plt.ylabel(ylab)
     plt.show()
+def simulate_nan(X, nan_rate):
+    '''(np.array, number) -> {str: np.array or number}
+    
+    Preconditions:
+    1. np.isnan(X_complete).any() == False
+    2. 0 <= nan_rate <= 1
+    
+    Return the dictionary with four keys where: 
+    - Key 'X' stores a np.array where some of the entries in X 
+      are replaced with np.nan based on nan_rate specified.
+    - Key 'C' stores a np.array where each entry is False if the
+      corresponding entry in the key 'X''s np.array is np.nan, and True
+      otherwise.
+    - Key 'nan_rate' stores nan_rate specified.
+    - Key 'nan_rate_actual' stores the actual proportion of np.nan
+      in the key 'X''s np.array.
+    '''
+    
+    # Create C matrix; entry is False if missing, and True if observed
+    X_complete = X.copy()
+    nr, nc = X_complete.shape
+    C = np.random.random(nr * nc).reshape(nr, nc) > nan_rate
+    
+    # Check for which i's we have all components become missing
+    checker = np.where(sum(C.T) == 0)[0]
+    if len(checker) == 0:
+        # Every X_i has at least one component that is observed,
+        # which is what we want
+        X_complete[C == False] = np.nan
+    else:
+        # Otherwise, randomly "revive" some components in such X_i's
+        for index in checker:
+            reviving_components = np.random.choice(
+                nc, 
+                int(np.ceil(nc * np.random.random())), 
+                replace = False
+            )
+            C[index, np.ix_(reviving_components)] = True
+        X_complete[C == False] = np.nan
+    
+    return {
+        'X': X_complete,
+        'C': C,
+        'nan_rate': nan_rate,
+        'nan_rate_actual': np.sum(C == False) / (nr * nc)
+    }
 def terbin_model(mod, train, p_thres = None, criterion = None, 
                  ter_features = None, train_ter = None, **kwargs):
     '''(sm.GLMResultsWrapper, pd.DataFrame
