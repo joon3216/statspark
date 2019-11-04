@@ -21,5 +21,5 @@ from statspark.r_inspired import plot_op
 from statspark.r_inspired import plot_qq, plot_rf, plot_rlev, plot_sl
 from statspark.r_inspired import produce_roc_table
 from statspark.r_inspired import rpmf
-from statspark.qgf import count_null
+import statspark.qgf as qgf
 __version__ = '0.0.2'
