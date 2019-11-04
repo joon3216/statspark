@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="statspark",
-    version="0.0.1",
+    version="0.0.2",
     author="Junkyu Park",
     author_email="joon3216@gmail.com",
     description="Functions for statistical analysis",
