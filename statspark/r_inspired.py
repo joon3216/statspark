@@ -483,6 +483,70 @@ def fft_curve(tt, yy, only_sin = False):
         "maxcov": np.max(pcov), 
         "rawres": (guess, popt, pcov)
     }
+def fusion_estimates(y, lambd, theta = None, max_iter = 1000, eps = 1e-05):
+    '''(np.array, number[, np.array, int, number]) -> 
+        {str: np.array or number}
+    
+    Preconditions:
+    1. len(y) == len(theta) if theta specified.
+    2. lambd > 0 and eps > 0
+    3. max_iter > 1
+
+    Calculate the fusion estimates theta_i's in y_i = theta_i + error_i. 
+    Return the dictionary that stores: 
+    - 'theta', the fusion estimates of y iterated from theta with the
+      maximum iteration max_iter and the cost difference threshold eps.
+    - 'phi', the differences of each 'theta'
+    - 'lambd', the lambd specified
+    - 'iteration', the number of iterations, and
+    - 'costs', the cost function evaluated at each iteration where the
+      first cost is calculated at iteration 0.
+
+    See https://joon3216.github.io/research_materials/2018/non_separable_penalty 
+    for details.
+    '''
+    
+    n = len(y)
+    if theta is None:
+        theta = y.copy()
+    phi = np.diff(theta)
+    phisums_old = np.cumsum(phi)
+    theta_1_new = (sum(y) - sum(phisums_old)) / n
+    cost = sum((y - theta) ** 2) + lambd * sum(abs(phi))
+    costs = []
+    costs.append(cost)
+    there_is_a_progress = True
+    iteration = 0
+    while there_is_a_progress and iteration < max_iter:
+        phi_new = np.zeros(n)
+        for j in range(1, n):
+            phisums_new = np.cumsum(phi_new)
+            req = sum(
+                phisums_old[(j - 1):(n - 1)] -\
+                phisums_old[j - 1] + phisums_new[j - 1]
+            )
+            discri = sum(y[j:n]) - (n - (j + 1) + 1) * theta_1_new - req
+            if discri < -lambd / 2:
+                phi_new[j] = (discri + lambd / 2) / (n - (j + 1) + 1)
+            elif discri > lambd / 2:
+                phi_new[j] = (discri - lambd / 2) / (n - (j + 1) + 1)
+        phi_new = phi_new[1:]
+        phisums_new = phisums_new[1:]
+        theta = np.append(theta_1_new, theta_1_new + phisums_new)
+        cost = sum((y - theta) ** 2) + lambd * sum(abs(phi_new))
+        theta_1_new = (sum(y) - sum(phisums_new)) / n
+        phisums_old = phisums_new
+        iteration += 1
+        costs.append(cost)
+        there_is_a_progress = not (abs(costs[iteration - 1] - cost) <= eps)
+        
+    return {
+        'theta': theta,
+        'phi': phi_new,
+        'lambd': lambd,
+        'iteration': iteration,
+        'costs': np.array(costs)
+    }
 def gauss_seidel(y, B = None, theta = None, lambd = None, max_iter = 50, 
                  eps = 1e-08):
     '''(1d-array[, 2d-array, 1d-array, float, int, float]) -> 
