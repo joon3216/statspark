@@ -644,7 +644,12 @@ def gauss_seidel(y, B = None, theta = None, lambd = None, max_iter = 50,
             no_conv = False
     errors = np.array(errors)
 
-    return {'y': y, 'theta': theta, 'niters': iteration, 'errors': errors}
+    return {
+        'theta': theta, 
+        'lambd': lambd,
+        'iteration': iteration, 
+        'errors': errors
+    }
 def get_p_thres(roc_tbl, criterion = None):
     '''(returning pd.DataFrame of produce_roc_table[, [str, number]]) 
         -> float
