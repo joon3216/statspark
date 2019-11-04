@@ -19,11 +19,12 @@
 ## ver 0.0.1 (GitHub)
 
 * Added the following plotting functions:
-    + `plot_lm`
-    + `plot_qq`
-    + `plot_rf`
-    + `plot_rlev`
-    + `plot_sl`
+    + `count_null`: return an SQL query that counts the number of NULLs in selected columns
+    + `plot_lm`: draw linear regression plots
+    + `plot_qq`: draw a Normal Q-Q plot
+    + `plot_rf`: draw a Residuals vs. Fitted plot
+    + `plot_rlev`: draw a Residuals vs. Leverage plot
+    + `plot_sl`: draw a Scale-Location plot
 
 ## ver 0.0.1 (PyPI)
 
