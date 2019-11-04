@@ -42,7 +42,7 @@ def count_null(table_name, column_names, sql_type = 'bigquery'):
                     {1}
                 ) AS nulls_counted
             ), 
-            UNNEST(row) AS r;
+            UNNEST(row) AS r
             '''\
             .format(null_count, nulls_counted)
     else:
@@ -61,7 +61,7 @@ def count_null(table_name, column_names, sql_type = 'bigquery'):
                 {1} AS null_count 
             FROM (
                 {2}
-            ) AS nulls_counted;
+            ) AS nulls_counted
             '''\
             .format(column_name, null_count, nulls_counted)
 
