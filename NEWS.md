@@ -16,6 +16,12 @@
     + `model_by_lrt`
     + `plot_rl`
 
+## ver 0.0.3 (GitHub)
+
+* Added the following function:
+    + `random_word`: generate a random sequence of characters
+
+
 ## ver 0.0.3 (PyPI)
 
 * Added the following function:
