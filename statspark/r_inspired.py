@@ -1093,7 +1093,7 @@ def produce_roc_table(mod, train):
     
     return roc_tbl
 def random_word(n, type = 'alpha'):
-    '''(int) -> str
+    '''(int, str) -> str
 
     Precondition: type in ['alnum', 'alpha', 'lower', 'numeric', 'upper']
 
