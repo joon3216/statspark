@@ -1,7 +1,7 @@
 
 # `statspark`
 
-## Coming up: ver 0.0.3
+## Coming up: ver 0.0.4
 
 * Add tests for functions
 * Define `Model` object to incorporate the training set and the formula. This will get rid of `train` argument in the following functions:
@@ -16,9 +16,9 @@
     + `model_by_lrt`
     + `plot_rl`
 
-## ver 0.0.2 (GitHub)
+## ver 0.0.3 (PyPI)
 
-* Added the following functions:
+* Added the following function:
     + `fusion_estimates`: see [here](https://joon3216.github.io/research_materials/2018/non_separable_penalty) for details
 * Edited the return value of `count_null`:
     + semicolon at the end is removed.
@@ -26,7 +26,7 @@
     + `y` deleted, `lambd` added, `niters` changed its name to `iteration`
 
 
-## ver 0.0.2 (PyPI)
+## ver 0.0.2
 
 * Added the following functions:
     + `count_null`: return an SQL query that counts the number of NULLs in selected columns in a table
