@@ -1092,6 +1092,46 @@ def produce_roc_table(mod, train):
     roc_tbl['dist_to_optimal_point'] = dtp    
     
     return roc_tbl
+def random_word(n, type = 'alpha'):
+    '''(int) -> str
+
+    Precondition: type in ['alnum', 'alpha', 'lower', 'numeric', 'upper']
+
+    Return a random combination of characters of length n and of 
+    type `type`:
+        
+        * 'alnum': lower-case alphabets, capitals, and integers
+        * 'alpha': lower-case alphabets and capitals
+        * 'lower': lower-case alphabets
+        * 'numeric': integers
+        * 'upper': capitals
+    '''
+
+    assert type in ['alnum', 'alpha', 'lower', 'numeric', 'upper'], \
+        "type must be one of 'alnum', 'alpha', 'lower', 'numeric', or " +\
+        "'upper', not " + str(type) + "."
+    alphabets_upper = [
+        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+        "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+    ]
+    alphabets_lower = list(map(lambda x: x.lower(), alphabets_upper))
+    integers = list(map(str, range(10)))
+
+    support =\
+        alphabets_upper + alphabets_lower + integers if type == 'alnum' \
+        else alphabets_upper + alphabets_lower if type == 'alpha' \
+        else alphabets_lower if type == 'lower' \
+        else integers if type == 'numeric' \
+        else alphabets_upper
+
+    def dchar(x):
+        return dpmf(
+            x, 
+            [1 / len(support)] * len(support), 
+            support
+        )
+
+    return ''.join(rpmf(n, dchar, support))
 def rpmf(n, pmf, support, **kwargs):
     '''(int, function, *iterable[, **kwargs]) -> np.array
     
