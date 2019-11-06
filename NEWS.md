@@ -1,7 +1,7 @@
 
 # `statspark`
 
-## Coming up: ver 0.0.5
+## Coming up: ver 0.0.6
 
 * Add tests for functions
 * Define `Model` object to incorporate the training set and the formula. This will get rid of `train` argument in the following functions:
@@ -16,7 +16,29 @@
     + `model_by_lrt`
     + `plot_rl`
 
-## ver 0.0.4 (PyPI)
+## ver 0.0.5 (PyPI)
+
+* Added the following classes:
+    + `statspark.get_option`: get module-wide options
+        + supports `statspark.get_option('qgf.dbname')`
+        + supports `statspark.get_option('qgf.available_dbname')`
+    + `statspark.options`: get/set module-wide options via attribute-like approach
+        + supports `statspark.options.qgf.dbname`
+        + supports `statspark.options.qgf.available_dbname`
+    + `statspark.set_option`: set module-wide options
+        + supports `statspark.set_option(option, value)` to set `option` as `value`
+        + supports `statspark.set_option(op_1, val_1, op_2, val_2, ..., op_k, val_k)` to set from `op_1`, `op_2` until `op_k` as `val_1`, `val_2` all the way down to `val_k` respectively
+* Added the following submodules:
+    + `statspark.config`: storing module-wide options
+    + `statspark.qgf`: storing query-generating functions
+* Changed the keyword and keyword behaviour of functions in `statspark.qgf`:
+    + All functions now use `dbname` in place of `sql_type`
+    + The default value of `dbname` in functions are set to be `None`.
+    + The default replacement value of `dbname` within a function whenever `dbname = None` is set to be `statspark.get_option('qgf.dbname')`
+* Deprecated the following constant:
+    + `statspark.qgf.sql_type`: replaced with `statspark.options.qgf.dbname`
+
+## ver 0.0.4
 
 * Added the following constant:
     + `statspark.qgf.sql_type`: `sql_type` that you are working on. Currently, only 'bigquery' and 'postgres' are supported.

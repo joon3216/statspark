@@ -1,3 +1,4 @@
+
 import setuptools
 
 with open("README.md", "r") as fh:
@@ -5,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="statspark",
-    version="0.0.6",
+    version="0.0.5",
     author="Junkyu Park",
     author_email="joon3216@gmail.com",
     description="Functions for statistical analysis",

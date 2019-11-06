@@ -2,36 +2,33 @@
 from statspark.config import get_option
 
 
-def count_distinct(table_name, column_names, sql_db = None):
+def count_distinct(table_name, column_names, dbname = None):
     '''(str, str or [str][, str]) -> str
 
     Return the query that counts the number of unique values at each
     column in column_names (or column_names if column_names is a string) 
     of table_name.
-    sql_db must be one of statspark.get_option('sql.available_db').
+    dbname must be one of statspark.get_option('qgf.available_dbname').
     '''
 
-    sql_db = get_option('sql.db') if sql_db is None else sql_db
-    assert sql_db in get_option('sql.available_db'), \
-        '{0} is not yet supported.'.format(sql_db)
     counted = request_each(
         table_name, 
         column_names, 
         "COUNT(DISTINCT({0})) AS {0}",
-        sql_db
+        dbname
     )
     get_query = transpose(
-        counted, column_names, 'column_name', 'num_distinct', sql_db
+        counted, column_names, 'column_name', 'num_distinct', dbname
     )
 
     return get_query
-def count_null(table_name, column_names, sql_db = None):
+def count_null(table_name, column_names, dbname = None):
     '''(str, str or [str][, str]) -> str
 
     Return the query that counts the number of NULLs at each column
     in column_names (or column_names if column_names is a string) of 
     table_name.
-    sql_db must be one of statspark.get_option('sql.available_db').
+    dbname must be one of statspark.get_option('qgf.available_dbname').
 
     >>> # e.g.1 bigquery
     >>> colnames = ['RowId', 'IntersectionId']
@@ -44,21 +41,18 @@ def count_null(table_name, column_names, sql_db = None):
     >>> # count_null('train_feateng', colnames2, 'postgres')
     '''
 
-    sql_db = get_option('sql.db') if sql_db is None else sql_db
-    assert sql_db in get_option('sql.available_db'), \
-        '{0} is not yet supported.'.format(sql_db)
     counted = request_each(
         table_name, 
         column_names, 
         "COUNT(CASE WHEN {0} IS NULL THEN 1 END) AS {0}",
-        sql_db
+        dbname
     )
     get_query = transpose(
-        counted, column_names, 'column_name', 'num_null', sql_db
+        counted, column_names, 'column_name', 'num_null', dbname
     )
 
     return get_query
-def is_unique(table_name, column_names, sql_db = None):
+def is_unique(table_name, column_names, dbname = None):
     '''(str, str or [str][, str]) -> str
 
     If column_names is a string, return the query that checks whether 
@@ -66,13 +60,13 @@ def is_unique(table_name, column_names, sql_db = None):
     If column_names is a list of str, return the query that check whether 
     the combination of values at each record in column_names are unique
     across table_name. 
-    sql_db must be one of statspark.get_option('sql.available_db').
+    dbname must be one of statspark.get_option('sql.available_dbname').
     '''
 
-    sql_db = get_option('sql.db') if sql_db is None else sql_db
-    assert sql_db in get_option('sql.available_db'), \
-        '{0} is not yet supported.'.format(sql_db)
-    tbl = "`{0}`" if sql_db == 'bigquery' else "{0}"
+    dbname = get_option('qgf.dbname') if dbname is None else dbname
+    assert dbname in get_option('qgf.available_dbname'), \
+        '{0} is not yet supported.'.format(dbname)
+    tbl = "`{0}`" if dbname == 'bigquery' else "{0}"
     tbl = tbl.format(table_name)
     counters = "COUNT({0}) AS nrow, COUNT(DISTINCT({1})) AS distinct_{2}"
     if isinstance(column_names, str):
@@ -81,12 +75,12 @@ def is_unique(table_name, column_names, sql_db = None):
             counters.format(column_names, column_names, names)
     else:
         if len(column_names) == 1:
-            return is_unique(table_name, column_names[0], sql_db)
+            return is_unique(table_name, column_names[0], dbname)
         casters = "CAST({col} AS {type}), '_', "
         casters = ''.join(map(
             lambda x: casters.format(
                 col = x, 
-                type = "STRING" if sql_db == 'bigquery' else 'TEXT'
+                type = "STRING" if dbname == 'bigquery' else 'TEXT'
             ), 
             column_names
         ))
@@ -109,31 +103,31 @@ def is_unique(table_name, column_names, sql_db = None):
         .format(names = names, counters = counters, tbl = tbl)
     
     return get_query
-def request_each(table_name, column_names, request, sql_db = None):
+def request_each(table_name, column_names, request, dbname = None):
     '''(str, str or [str], str[, str]) -> str
 
     Return the query that performs a requested computation `request` at 
     each column in column_names of table_name. A place of column should be
     denoted as "{0}" in `request`.
-    sql_db must be one of statspark.get_option('sql.available_db').
+    dbname must be one of statspark.get_option('qgf.available_dbname').
 
     >>> # e.g.
     >>> request1 = "COUNT(DISTINCT({0})) AS {0}"
     >>> request2 = "COUNT(CASE WHEN {0} IS NULL THEN 1 END) AS {0}"
     '''
 
-    sql_db = get_option('sql.db') if sql_db is None else sql_db
-    assert sql_db in get_option('sql.available_db'), \
-        '{0} is not yet supported.'.format(sql_db)
+    dbname = get_option('qgf.dbname') if dbname is None else dbname
+    assert dbname in get_option('qgf.available_dbname'), \
+        '{0} is not yet supported.'.format(dbname)
     if isinstance(column_names, str):
         column_names = [column_names]
-    tbl = "`{0}`" if sql_db == 'bigquery' else "{0}"
+    tbl = "`{0}`" if dbname == 'bigquery' else "{0}"
     tbl = tbl.format(table_name)
     requests = ', '.join(map(lambda x: request.format(x), column_names))
 
     return "SELECT {0} FROM {1}".format(requests, tbl)
 def transpose(query, column_names, key = 'key', value = 'value', 
-              sql_db = None):
+              dbname = None):
     '''(str, str or [str][, str, str, str]) -> str
 
     Precondition: 
@@ -146,13 +140,13 @@ def transpose(query, column_names, key = 'key', value = 'value',
     where k is the number of columns and the row contains numbers. `key` 
     will be the name of "column" column in the new table, and `value` will
     be the name of value column. 
-    `sql_db` must be one of statspark.get_option('sql.available_db').
+    `dbname` must be one of statspark.get_option('qgf.available_dbname').
     '''
 
-    sql_db = get_option('sql.db') if sql_db is None else sql_db
-    assert sql_db in get_option('sql.available_db'), \
-        '{0} is not yet supported.'.format(sql_db)
-    if sql_db == 'bigquery':
+    dbname = get_option('qgf.dbname') if dbname is None else dbname
+    assert dbname in get_option('qgf.available_dbname'), \
+        '{0} is not yet supported.'.format(dbname)
+    if dbname == 'bigquery':
         bq_sums = "('{0}', {0})"
         summed = ", ".join(map(lambda x: bq_sums.format(x), column_names))
         get_query =\

@@ -1,88 +1,54 @@
 
+from collections import namedtuple
 import re
-import warnings
 
-_get_option_tmpl = """
-set_option(pat, value)
 
-Sets the value of the specified option.
-
-Available options:
-
-{opts_list}
-
-Parameters
-----------
-pat : str
-    Regexp which should match a single option.
-    Note: partial matches are supported for convenience, but unless you use 
-    the full option name (e.g. x.y.z.option_name), your code may break in 
-    future versions if new options with similar names are introduced.
-value : object
-    New value of option.
-
-Returns
--------
-None
-
-Raises
-------
-KeyError if no such option exists
-
-Notes
------
-The available options with its descriptions:
-
-{opts_desc}
-"""
+RegisteredOption = namedtuple(
+    "RegisteredOption", 
+    "key defval doc validator"
+)
+def is_tuple_str(x):
+    if not isinstance(x, tuple):
+        msg = 'qgf.available_dbname should be a tuple, not {}.'
+        raise ValueError(msg.format(type(x)))
+    for item in x:
+        if not isinstance(item, str):
+            msg = 'Elements in qgf.available_dbname should be str, not {}.'
+            raise ValueError(msg.format(type(item)))
+    return None
+def is_str(x):
+    if not isinstance(x, str):
+        raise ValueError('qgf.dbname must be str, not {}'.format(type(x)))
+    return None
 _global_config = {
-    'sql': {
-        'available_db': ['bigquery', 'postgres'],
-        'db': 'bigquery'
+    'qgf': {
+        'available_dbname': ('bigquery', 'postgres'),
+        'dbname': 'bigquery'
     }
 }
 _registered_options = {
-    'sql.available_db': ['bigquery', 'postgres'],
-    'sql.db': 'bigquery'
+    'qgf.available_dbname': RegisteredOption(
+        key = "qgf.available_dbname",
+        defval = ('bigquery', 'postgres'),
+        doc =\
+            "\n (str)\n    " +\
+            "All available dbnames that are supported.",
+        validator = is_tuple_str
+    ),
+    'qgf.dbname': RegisteredOption(
+        key = 'qgf.dbname',
+        defval = 'bigquery',
+        doc =\
+            "\n: str\n    " +\
+            "A current dbname. Default is 'bigquery'.\n" +\
+            "See qgf.available_dbname for all available dbnames.",
+        validator = is_str
+    )
 }
-_set_option_tmpl = """
-set_option(pat, value)
-
-Sets the value of the specified option.
-
-Available options:
-
-{opts_list}
-
-Parameters
-----------
-pat : str
-    Regexp which should match a single option.
-    Note: partial matches are supported for convenience, but unless you use
-    the full option name (e.g. x.y.z.option_name), your code may break in 
-    future versions if new options with similar names are introduced.
-value : object
-    New value of option.
-
-Returns
--------
-None
-
-Raises
-------
-KeyError if no such option exists
-
-Notes
------
-The available options with its descriptions:
-
-{opts_desc}
-"""
 
 
 class CallableDynamicDoc:
-    def __init__(self, func, doc_tmpl):
-        self.__doc_tmpl__ = doc_tmpl
+    def __init__(self, func):
         self.__func__ = func
 
     def __call__(self, *args, **kwargs):
@@ -167,13 +133,7 @@ def _set_option(*args, **kwargs):
         root, k = _get_root(key)
         root[k] = v
 
-        if o.cb:
-            if silent:
-                with warnings.catch_warnings(record = True):
-                    o.cb(key)
-            else:
-                o.cb(key)
 
-get_option = CallableDynamicDoc(_get_option, _get_option_tmpl)
+get_option = CallableDynamicDoc(_get_option)
 options = DictWrapper(_global_config)
-set_option = CallableDynamicDoc(_set_option, _set_option_tmpl)
+set_option = CallableDynamicDoc(_set_option)
