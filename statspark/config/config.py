@@ -37,12 +37,12 @@ The available options with its descriptions:
 """
 _global_config = {
     'sql': {
-        'available_type': ['bigquery', 'postgres'],
+        'available_types': ['bigquery', 'postgres'],
         'type': 'bigquery'
     }
 }
 _registered_options = {
-    'sql.available_type': ['bigquery', 'postgres'],
+    'sql.available_types': ['bigquery', 'postgres'],
     'sql.type': 'bigquery'
 }
 _set_option_tmpl = """

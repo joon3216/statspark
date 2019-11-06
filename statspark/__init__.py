@@ -3,7 +3,9 @@ __version__ = '0.0.4'
 
 
 from statspark.config import (
-    get_option
+    get_option,
+    options,
+    set_option
 )
 from statspark.qgf import qgf
 from statspark.r_inspired import (
