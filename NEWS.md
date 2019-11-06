@@ -18,9 +18,14 @@
 
 ## ver 0.0.3 (GitHub)
 
-* Added the following function:
+* Added the following constant:
+    + `statspark.qgf.sql_type`: `sql_type` that you are working on. Currently, only 'bigquery' and 'postgres' are supported.
+* Added the following functions:
+    + `count_distinct`: return an SQL query that counts the number of distinct values in each selected columns of a table
+    + `is_unique`: return an SQL query that verifies whether all values at each record in a column, or a combination of columns, are unique within the column/combination.
     + `random_word`: generate a random sequence of characters
-
+    + `request_each`: return an SQL query that performs a computation request at each (specified) column
+    + `transpose`: return an SQL query that transposes a 1-by-k table
 
 ## ver 0.0.3 (PyPI)
 
@@ -35,7 +40,7 @@
 ## ver 0.0.2
 
 * Added the following functions:
-    + `count_null`: return an SQL query that counts the number of NULLs in selected columns in a table
+    + `count_null`: return an SQL query that counts the number of NULLs in each selected columns of a table
     + `csum_N_pois`: return a DFT-based pmf
     + `dpmf`: generate a (finite-support) pmf
     + `impute_em`: impute missing values by the EM algorithm assuming normality of observations
