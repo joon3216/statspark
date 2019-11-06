@@ -1,8 +1,6 @@
 
-sql_type = 'bigquery'
 
-
-def count_distinct(table_name, column_names, sql_type = sql_type):
+def count_distinct(table_name, column_names, sql_type = SQL_TYPE):
     '''(str, str or [str][, str]) -> str
 
     Return the query that counts the number of unique values at each
@@ -22,7 +20,7 @@ def count_distinct(table_name, column_names, sql_type = sql_type):
     )
 
     return get_query
-def count_null(table_name, column_names, sql_type = sql_type):
+def count_null(table_name, column_names, sql_type = SQL_TYPE):
     '''(str, str or [str][, str]) -> str
 
     Return the query that counts the number of NULLs at each column
@@ -52,7 +50,7 @@ def count_null(table_name, column_names, sql_type = sql_type):
     )
 
     return get_query
-def is_unique(table_name, column_names, sql_type = sql_type):
+def is_unique(table_name, column_names, sql_type = SQL_TYPE):
     '''(str, str or [str][, str]) -> str
 
     If column_names is a string, return the query that checks whether 
@@ -100,13 +98,14 @@ def is_unique(table_name, column_names, sql_type = sql_type):
         .format(names = names, counters = counters, tbl = tbl)
     
     return get_query
-def request_each(table_name, column_names, request, sql_type = sql_type):
+def request_each(table_name, column_names, request, 
+                 sql_type = SQL_TYPE):
     '''(str, str or [str], str[, str]) -> str
 
     Return the query that performs a requested computation `request` at 
     each column in column_names of table_name. A place of column should be
     denoted as "{0}" in `request`.
-    sql_type is either 'bigquery' or 'postgres'.
+    sql_type should be one of statspark.AVAILABLE_SQL_TYPE.
 
     >>> # e.g.
     >>> request1 = "COUNT(DISTINCT({0})) AS {0}"
@@ -121,7 +120,7 @@ def request_each(table_name, column_names, request, sql_type = sql_type):
 
     return "SELECT {0} FROM {1}".format(requests, tbl)
 def transpose(query, column_names, key = 'key', value = 'value', 
-              sql_type = sql_type):
+              sql_type = SQL_TYPE):
     '''(str, str or [str][, str, str, str]) -> str
 
     Precondition: 
@@ -134,7 +133,7 @@ def transpose(query, column_names, key = 'key', value = 'value',
     where k is the number of columns and the row contains numbers. `key` 
     will be the name of "column" column in the new table, and `value` will
     be the name of value column. 
-    `sql_type` is either 'bigquery' or 'postgres'.
+    `sql_type` should be one of statspark.AVAILABLE_SQL_TYPE.
     '''
 
     if sql_type == 'bigquery':

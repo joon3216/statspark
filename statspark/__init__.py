@@ -1,26 +1,35 @@
 
-from statspark.r_inspired import Interval, Pipe
-from statspark.r_inspired import add_intercept
-from statspark.r_inspired import additive_terms
-from statspark.r_inspired import csum_N_pois
-from statspark.r_inspired import dcast
-from statspark.r_inspired import determine_type
-from statspark.r_inspired import dist_to_point
-from statspark.r_inspired import dpmf
-from statspark.r_inspired import fft_curve
-from statspark.r_inspired import gauss_seidel
-from statspark.r_inspired import get_p_thres
-from statspark.r_inspired import get_response
-from statspark.r_inspired import hsm
-from statspark.r_inspired import impute_em
-from statspark.r_inspired import kde, kde_mult
-from statspark.r_inspired import logarithmic_scoring
-from statspark.r_inspired import npmap
-from statspark.r_inspired import plot_lm
-from statspark.r_inspired import plot_op
-from statspark.r_inspired import plot_qq, plot_rf, plot_rlev, plot_sl
-from statspark.r_inspired import produce_roc_table
-from statspark.r_inspired import random_word
-from statspark.r_inspired import rpmf
-import statspark.qgf as qgf
 __version__ = '0.0.4'
+
+
+from statspark.config import (
+    get_option
+)
+from statspark.qgf import qgf
+from statspark.r_inspired import (
+    # classes
+    Interval, Pipe,
+    # functions
+    add_intercept,
+    additive_terms,
+    csum_N_pois,
+    dcast,
+    determine_type,
+    dist_to_point,
+    dpmf,
+    fft_curve,
+    gauss_seidel,
+    get_p_thres,
+    get_response,
+    hsm,
+    impute_em,
+    kde, kde_mult,
+    logarithmic_scoring,
+    npmap,
+    plot_lm,
+    plot_op,
+    plot_qq, plot_rf, plot_rlev, plot_sl,
+    produce_roc_table,
+    random_word,
+    rpmf
+)
