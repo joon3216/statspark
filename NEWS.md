@@ -33,7 +33,7 @@
     + `statspark.qgf`: storing query-generating functions
 * Changed the keyword and keyword behaviour of functions in `statspark.qgf`:
     + All functions now use `dbname` in place of `sql_type`
-    + The default value of `dbname` in functions are set to be `None`.
+    + The default argument value of `dbname` of functions is set to be `None`.
     + The default replacement value of `dbname` within a function whenever `dbname = None` is set to be `statspark.get_option('qgf.dbname')`
 * Deprecated the following constant:
     + `statspark.qgf.sql_type`: replaced with `statspark.options.qgf.dbname`
