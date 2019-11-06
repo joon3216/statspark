@@ -159,7 +159,7 @@ def _set_option(*args, **kwargs):
         msg2 = '_set_option() got an unexpected keyword argument "{kwarg}"'
         raise TypeError(msg2.format(list(kwargs.keys())[0]))
     for k, v in zip(args[::2], args[1::2]):
-        key = _get_single_key(k, silent)
+        key = _get_single_key(k)
         o = _get_registered_option(key)
         if o and o.validator:
             o.validator(v)
