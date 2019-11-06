@@ -1,7 +1,7 @@
 
 # `statspark`
 
-## Coming up: ver 0.0.4
+## Coming up: ver 0.0.5
 
 * Add tests for functions
 * Define `Model` object to incorporate the training set and the formula. This will get rid of `train` argument in the following functions:
@@ -16,7 +16,7 @@
     + `model_by_lrt`
     + `plot_rl`
 
-## ver 0.0.3 (GitHub)
+## ver 0.0.4 (PyPI)
 
 * Added the following constant:
     + `statspark.qgf.sql_type`: `sql_type` that you are working on. Currently, only 'bigquery' and 'postgres' are supported.
@@ -27,7 +27,7 @@
     + `request_each`: return an SQL query that performs a computation request at each (specified) column
     + `transpose`: return an SQL query that transposes a 1-by-k table
 
-## ver 0.0.3 (PyPI)
+## ver 0.0.3
 
 * Added the following function:
     + `fusion_estimates`: see [here](https://joon3216.github.io/research_materials/2018/non_separable_penalty) for details

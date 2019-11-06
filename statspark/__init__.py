@@ -23,4 +23,4 @@ from statspark.r_inspired import produce_roc_table
 from statspark.r_inspired import random_word
 from statspark.r_inspired import rpmf
 import statspark.qgf as qgf
-__version__ = '0.0.3'
+__version__ = '0.0.4'
